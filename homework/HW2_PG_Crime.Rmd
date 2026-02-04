@@ -9,7 +9,7 @@ In this assignment, we will be working with a dataset reporting the number of cr
 You will need to load the tidyverse library
 
 ```{r}
-
+library (tidyverse)
 ```
 
 Then you'll load the data from the web. The URL for the data is: https://raw.githubusercontent.com/dwillis/jour405/refs/heads/main/data/pg_crime_totals_2024.csv. You will create a dataframe called `pg_crime` that contains the data from this URL.
@@ -17,12 +17,15 @@ Then you'll load the data from the web. The URL for the data is: https://raw.git
 ### Task 2: Load the Data and Describe It
 
 ```{r}
+pg_crime<- read_csv("https://raw.githubusercontent.com/dwillis/jour405/refs/heads/main/data/pg_crime_totals_2024.csv")
 ```
 ### Task 3: Describe the Data
 
 You should examine that dataframe carefully by clicking on it in the Environment tab in RStudio. Write a couple of sentences describing the categories of incidents. From a reporting standpoint, are any of the categories more important than others? Why or why not? Do any of them make the job of summarizing the data more difficult? Why or why not?
 
-ANSWER HERE
+For the most part, the categories are organized by their broad definition - assault, for example - then followed by more specific subcategories for each definition. Robbery has the most subcategories with "commercial," "residential," "vehicle" and "other" all being options aside from general robbery, whereas homicide and sex offense are the two categories which stand on their own. 
+
+The categories which are really broken down into subcategories can be useful for analysis, but I believe they also muddy the definitions of each - what constitutes a robbery categorized as "other," and where is the line drawn between commercial and residential for crimes broken down that way? I also would want to know more about how "assault" is defined for the purpose of this data, as that is a relatively vague and broad category. In my opinion, the categories most worth reporting on would be the ones with drastic changes over the year - for example, is there a reason car thefts seem to go up in the summer and why car accidents spike at the end of the year? 
 
 ### Task 4: Calculating Averages
 

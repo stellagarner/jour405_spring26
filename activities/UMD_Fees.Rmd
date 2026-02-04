@@ -32,6 +32,20 @@ umd_fees_pct <- umd_fees |> mutate(pct_change = (`Fall 2025`- `Fall 2024`)/`Fall
 
 ```
 
+```{r}
+comp <- read_csv("https://raw.githubusercontent.com/dwillis/jour405/refs/heads/main/data/class_composition.csv")
+```
+```{r}
+comp |>
+  summarize(
+    mean_first = mean(first_year),
+    mean_soph = mean(sophomore),
+    mean_junior = mean(junior),
+    mean_senior = mean(senior),
+    mean_grad = mean(grad)
+  )
+```
+
 
 
 ### Task 4: Describe our results
