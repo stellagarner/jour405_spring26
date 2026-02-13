@@ -64,3 +64,14 @@ From 2019 to 2020, the Somerset County town saw property crime rates jump over 3
 ### Task 9: Save Your Work and Put it on GitHub
 
 Save this notebook, then commit it to your local repository. Push the changes to your GitHub repository and submit the URL for this file in ELMS.
+
+### Task 10
+
+```{r}
+md_cities_percentiles <- md_cities_rates %>% mutate(percentile = ntile(violent_rate_2020, 100))
+```
+There are 8 cities above the 90th percentile of violent crime rates in 2020. 
+```{r}
+md_cities_percentiles %>% summarize(IQR=IQR(violent_rate_2020))
+```
+Based on the small value of this IQR, I get the sense that most crime rates in Maryland are pretty middling. Although this is a good thing, I think it would be a difficult statistic to turn into an interesting story unless you were the press secretary for Maryland State Police. 
