@@ -1,6 +1,6 @@
 ---
 title: "Baltimore County 911 Overdose Calls Analysis"
-author: "YOUR NAME HERE"
+author: "Stella Garner"
 ---
 
 ```{r setup, include=FALSE}
@@ -74,8 +74,7 @@ summary(daily_calls$call_count)
 
 Let's visualize the time series of daily calls. What patterns do you see? If you had to draw horizontal lines that would highlight unusual days, where would those lines be?
 
-ANSWER HERE
-
+There are specific spikes in October and January that I think would be interesting to explore or highlight. It also looks like there was a pretty stark drop-off in calls after the beginning of 2023 - especially the very last point, which is lower than any of the points around that same time in 2022. 
 ```{r daily-calls-plot}
 # Plot daily call volume
 ggplot(daily_calls, aes(x = date, y = call_count)) +
@@ -137,8 +136,7 @@ unusual_days |>
 
 Let's visualize these unusual days in the context of the full dataset. How do they differ from your answer on Task 3?
 
-ANSWER HERE
-
+Something that I can see now which I didn't notice before was how close some of the unusually high dates are to unusually low dates. This tells me that, although there are broader seasonal trends, spikes and dips can happen on a spontaneous day-by-day basis, meaning it's worth looking into specific days in addition to trying to find broader trends. 
 ```{r plot-unusual-days}
 # Create a clean factor for the plot legend
 daily_calls <- daily_calls |>
@@ -207,8 +205,7 @@ ggplot(dow_summary, aes(x = day_of_week, y = avg_calls)) +
 
 We can also calculate z-scores that account for the day of the week pattern. How would you describe the day with the highest z-score without using the term "z-score"?
 
-ANSWER HERE
-
+Saturday is the day of the week most likely to see an unusually high amount of calls, with Friday coming close behind it.  
 ```{r day-of-week-z-scores}
 # Calculate day-of-week adjusted z-scores
 daily_calls <- daily_calls |>
@@ -298,5 +295,4 @@ top_outliers |> kable(digits = 2)
 
 Based on our z-score analysis, what are some potential angles for reporting? What would your next steps be and what would you tell an editor about your findings?
 
-ANSWER HERE
-
+Based on what we discussed in class, it would be interesting to dig into the timeline of how batches of fentanyl are dispersed and how those days with spikes could or do correspond with new/bad batches of drugs being dispersed in the county. Specifically, the two dates in the summer that are close to one another - are they two separate events, or a ripple effect from a single dispersion? 
