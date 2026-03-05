@@ -5,27 +5,54 @@ title: "HW8_MandMs"
 In this assignment, you'll be picking up where you left off with the M&Ms activity. You'll load the data and perform some basic statistical analysis. Follow the steps below to complete the assignment.
 
 ### Task 1: Load the tidyverse
+```{r}
+library(tidyverse)
+```
 
 
 ### Task 2: Load the M&Ms dataset from https://raw.githubusercontent.com/dwillis/jour405/refs/heads/main/data/mandms.csv
+```{r}
+MM <- read_csv("https://raw.githubusercontent.com/dwillis/jour405/refs/heads/main/data/mandms.csv")
+```
 
 
 ### Task 3: Sample 5 rows of data from the dataset
+```{r}
+set.seed(42)
+sample_5 <- MM %>% sample_n(5)
+```
 
 
 ### Task 4: Calculate the mean age and standard deviation of the sample, using either the blue or white number of M&Ms
+```{r}
+sample_stats <- sample_5 %>% 
+  summarise(
+    mean_sample=mean(red),
+    sd_sample=sd(red)
+  )
+```
 
 
 ### Task 5: Calculate the mean age and standard deviation of the population, using the same measure as in Task 4
+```{r}
+pop_stats <- MM %>% 
+  summarise(
+    mean_pop=mean(red),
+    sd_pop=sd(red)
+  )
+```
 
 
 ### Task 6: Compare the sample and population statistics
 
 Compare the two sets of means and standard deviations. Are they similar?
 
+As could be expected, the standard deviation of the entire population from its mean is much higher than in the sample population, despite the fact that the mean is actually lower - though both means are relatively close in the 70s. 
+
 ### Task 7: Describe the results
 
 Write a few sentences about what you found in the data. What does this tell you about the M&Ms dataset and about the act of random sampling?
 
+Some simple division shows us that the standard deviation of the population is much higher in proportion to the mean than it is in the sample. This goes to show that populations are more likely to have higher standard deviations because you are working with a higher range of data, but that the mean will also be more accurate to the population as a whole. Because a sample is just a small amount of data with less opportunity for variability, it will deviate less but also be generally less reliable as a metric. 
 
 When finished, save your work, switch to GitHub Desktop, then add, commit and push your changes to GitHub and submit the URL of the notebook in ELMS.
