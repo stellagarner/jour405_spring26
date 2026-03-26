@@ -4,7 +4,11 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
 ```
 
 ## Are Students Getting Enough Sleep?
@@ -70,8 +74,8 @@ sleep_stats <- sleep_stats |>
   mutate(
     t_critical = qt(0.975, df = n - 1),
     margin_error = t_critical * se_hours,
-    ci_lower = mean_hours - se_hours,
-    ci_upper = mean_hours + se_hours
+    ci_lower = mean_hours - margin_error,
+    ci_upper = mean_hours + margin_error
   )
 
 sleep_stats |>
@@ -168,7 +172,7 @@ comparison
 
 **Answer this question:** How did the margin of error change? What does this tell you about the relationship between sample size and certainty?
 
-The margin of error in this case is much smaller, which tells us that we can calculate averages with a higher level of certainty when we have a larger sample size to go off of. It is suprising to me, though, that the confidence interval did not get smaller with the larger sample size, meaning the variations from the mean are likely to stay similarly varied regardless of sample size.  
+The margin of error in this case is much smaller, which tells us that we can calculate averages with a higher level of certainty when we have a larger sample size to go off of. 
 
 ### Task 8: Journalistic interpretation
 
