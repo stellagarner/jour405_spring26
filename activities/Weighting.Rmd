@@ -5,9 +5,13 @@ date: "2025-04-01"
 
 ```{r setup, include=FALSE}
 library(knitr)
-install.packages("kableExtra")
+#install.packages("kableExtra")
 library(kableExtra)
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
 library(tidyverse)
 
 ```
@@ -94,9 +98,15 @@ ggplot(nonvoters_data, aes(x = weight)) +
 
 1. What is the range of weights in this dataset?
 
+Our range shows that all of the data falls between weights of 0 and 3, with most of it clustered around a regular weight of 1. 
+
 2. What does it mean when a respondent has a weight of 0.23? What about 3.04?
 
+If a weight of 1 means that a respondent's answers are regularly weighted, 0.23 would mean that their responses only count for 0.23 of a person instead of 1 whole person. Similarly, someone whose answer is weighted at 3.04 is worth more than three times their original response because their demographic is underrepresented in the results. 
+
 3. Why might some respondents be weighted more heavily than others?
+
+Surveys are never able to perfectly model the demographics of the population they are surveying, meaning the results will never be perfectly indicative of public opinion if not weighted. Therefore, respondents who are from underrepresented demographics are going to have more heavily weighted responses so they represent a larger swath of their population, where respondents who are from overrepresented populations will have their answer pared down (negatively weighted) to more accurately reflect the size of their demographic in relation to the whole sample size. 
 
 # Exercise 1: Voter Categories and Weighting
 
@@ -220,7 +230,7 @@ comparison <- unweighted_summary |>
     "Unsure (% point diff)" = unsure_diff
   )
 
-kable(comparison, digits = 1, caption = "Difference Between Weighted and Unweighted Results (percentage points)")
+kable(comparison, digits = 1, caption = "Difference Between Unweighted and Weighted Results (percentage points)")
 ```
 
 **Explanation:**
@@ -232,7 +242,10 @@ kable(comparison, digits = 1, caption = "Difference Between Weighted and Unweigh
 **Answer These Questions:**
 
 1. Which voter category shows the biggest difference between weighted and unweighted results?
+The rarely/never category has the most drastically different results. 
 
 2. How might these differences affect reporting on likely voter turnout?
+Considering that a lot of the differences point to decreases in likely voters, this means that a report using unweighted results would see a much higher turnout than a report using weighted results. 
 
 3. Why do you think these differences exist? What does this tell us about who might be over or under-represented in the sample?
+If someone never votes, it follows that they probably wouldn't go out of their way to fill out a survey, either. This means that respondents who rarely or never vote are over-representing their demographic within the sample, meaning they could be incorrectly representing the opinions and tendencies of their group. Generally, it seems that the respondents from every group were overly positive about voting. 
