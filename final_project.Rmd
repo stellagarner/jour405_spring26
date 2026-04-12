@@ -10,6 +10,17 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
 ```{r}
-visitor_volume <- read_csv("")
+visitor_volume <- read_csv("visitor-volume.csv")
+room_rates <- read_csv("project/average-room-rate.csv")
+casino_revenue <- read_csv("homework/casino-revenue.csv")
+
 ```
+This data comes from the Las Vegas Convention and Visitors Authority (LVCVA), which has a research arm that tracks various economic indicators for the Las Vegas area each month. As a governmental entity, it is more reliable for data than a specific interest group or polling contractor would likely be; however, they do still have a motive in that they want to promote Vegas as a tourist destination. Regardless, I don't think there's any way they could or would manipulate this data to reflect that. Additionally, because it's real numbers and not polling responses, there are less ways in which the methodology might affect the results of the data; the onus of not getting incorrect results is on me in this case. 
+
+All of the data loaded provides monthly data going back to 1980, which is much more than I need (in a good way). I'm really only planning to look at the most recent dip in visitor volume, which can be seen in the data starting at January 2025 and continuously declining up until February 2026. 
+
+It's not fair to say whether the decline is truly over yet, considering visitor growth has only been in the positive for one month so far. 
+
+If you compare this data to the casino revenues and daily hotel rates for the same time period, it seems like casino revenues dip pretty much exactly in accordance with the severity of the decrease in visitor volume by month. Daily room rates also seem to dip, which is the opposite of the hypothesis I gave; however, it seems possible that room rates decreased in accordance with declining visitor rates to bring visitors back in. If this is true, I'll need to be able to present a specific delay in room rate trends relative to visitor volumes. 
+
 
