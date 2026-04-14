@@ -49,5 +49,21 @@ matches |>
 
 ### Task 6: Describe the results of both the correlation calculation and the scatterplot.
 
+On a range from -1 to 1, the correlation here is incredibly weak and almost nonexistent between goals and foul numbers. This can also be seen in the scatterplot, which has a correlation line that is practically flat, indicating almost no correlation or pattern. 
+
+
+###Task 7: Choose another variable and repeat the steps in tasks 4-5. Then, describe the result. 
+
+```{r}
+matches |> summarize(correlation = cor(goal_diff, sh_att, method="pearson"))
+```
+
+```{r}
+matches |> 
+  ggplot() +
+  geom_point(aes(x=goal_diff, y=sh_att)) +
+  geom_smooth(aes(x=goal_diff, y=sh_att), method="lm")
+```
+This set of data has a stronger correlation than the data in the previous example; this would follow with most reasoning, as you can't score without shooting. However, the fact that the correlation is not stronger indicates that there are other factors at play in terms of what makes for larger or smaller goal differences. 
 
 When you are done, save your work, switch to GitHub Desktop, then add, commit and push your changes to GitHub and submit the URL of the notebook in ELMS.
