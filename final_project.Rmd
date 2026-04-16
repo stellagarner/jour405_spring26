@@ -2,6 +2,11 @@
 title: "final_project"
 output: html_document
 ---
+###Given the kinds of tests that we've done in this class, give me an idea of what kinds of analyses you think are appropriate/useful for your project. This list could change, but err on the side of including something, even if you don't get to it later.###
+
+Maybe it's truly recency bias, but I do think that a simple scatterplot looking into the correlation between hotel rates and tourism rates would serve the hypothesis I am trying to come to best. I also think maybe a distribution chart would be a good thing to include if I can find some data on hotel rates in other similar American tourist destinations and compare their distribution to Vegas's. 
+
+I also like the idea of presenting the data with the mean and confidence intervals included. This could be used to show all three data sets I have pulled and how far each end of the timeline reaches from the mean, as well as provide more transparency about the data and its potential accuracy. 
 ```{r}
 library(tidyverse)
 ```
