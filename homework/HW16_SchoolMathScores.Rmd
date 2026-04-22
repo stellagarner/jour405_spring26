@@ -1,8 +1,7 @@
 ---
 title: "Identifying Schools with Biggest Differences in Math Test Scores, Part 2"
-author: "YOUR NAME"
+author: "Stella Garner"
 ---
-
 ```{r}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
@@ -11,75 +10,88 @@ options(scipen = 999)
 
 ### Introduction
 
-We'll do what we did in class, but with a twist: instead of Montgomery County, Pa., you'll be working with data from Montgomery County, Md. Same basic idea, though: linear regression looking at free and reduced-price meals and math test scores.
-
-Just as in the exercise, you will create a scatterplot to visualize the relationship between the FARMS (Free and Reduced-price Meal System) percentage and the percentage of students who met or exceeded math expectations. You'll then use linear regression to identify the schools that show the biggest differences between their actual and expected math test scores and evaluate the results of your model.
+In the class activity, you tested a school board member's claim using data from Montgomery County, Pa. — and found a model that didn't hold up. Now you'll run the same analysis using data from Montgomery County, Md. Your job is to evaluate whether the Maryland data tells a different story, and what that means for how you'd report on the claim.
 
 ### Loading the Data
-
-First, let's load the data into a data frame using the read_csv() function from the tidyverse library.
 
 ```{r}
 schools <- read_csv("https://raw.githubusercontent.com/dwillis/jour405_files/refs/heads/main/montgomery_md.csv")
 ```
-### Task: Create a Scatterplot and Describe the Results (5 points)
 
-First, let's create a scatterplot to visualize the relationship between the FARMS percentage and the percentage of students who met or exceeded math expectations. We'll use ggplot2 to create the plot and add a linear regression line.
+### Task 1: Examine the Data First (2 points)
+
+Before you plot anything, look at the data — you know why by now.
+
+```{r}
+summary(schools$`FARMS Pct`)
+schools |> arrange(desc(`FARMS Pct`)) |> head(10)
+```
+
+Are there any data quality issues like the ones you found in the Pennsylvania data? How does the distribution of FARMS percentages compare between the two counties? Note anything that concerns you or gives you confidence in the data.
+
+There are far less concerns for me just looking at this data on the surface, as there seems to be a normal incremental decrease in the FARMS eligibility at each school. However, there seems to be a similar random distribution of math scores just based on this sample, as I cannot follow any specific decreasing or increasing trend just looking at these schools. The highest number in proficiency belongs to the school with the lowest FARMS eligibility; the next highest number is the one with the highest. These are also vastly lower proficiency scores overall than we saw with the Pennsylvania data. 
+
+### Task 2: Create a Scatterplot and Compare (5 points)
+
+Replace the REPLACE_ME value with the correct variable name to create a scatterplot of FARMS percentage vs. math scores for Montgomery County, Md.
 
 ```{r}
 schools |>
   ggplot(aes(x = `FARMS Pct`, y = `% Met or Exceeded Math Expectations`)) +
   geom_point() +
   geom_smooth(method = "lm", se = FALSE, color = "red") +
-  labs(x = "FARMS Percentage", y = "% Met or Exceeded Math Expectations", title = "Scatterplot of Math Expectations vs FARMS Percentage")
+  labs(x = "FARMS Percentage", y = "% Met or Exceeded Math Expectations",
+       title = "Math Scores vs. FARMS Percentage, Montgomery County MD")
 ```
-Based on what you see here, what's the relationship between FARMS percentage and math test scores? Compare this scatterplot to the one you made in the class activity.
 
-ANSWER HERE
+Describe what you see. Then compare this scatterplot specifically to the Pennsylvania one: what differences do you notice in the direction, strength, and spread of the relationship? The two counties share a name and are both suburban — what might explain why they look so different?
 
+There does actually seem to be more of a shape to this data than what we saw with the Pennsylvania data, although it is still relatively scattered. It'll take some actual numbers to see whether there is noticeable improvement in statistical significance and correlation, but at face value, this chart seems much more likely to prove the board member's theory that schools with more students on FARMS see less proficiency in math testing. I did a little research on both counties, and MontCo (as the Pennsylvanians call it) has a AAA rating from S&P and about 300,000 less people than MoCo, which really makes me question where those 100 percent schools came from. Regardless, MoCo's lower testing scores overall and stronger correlation between variables could come from the fact that the county is much bigger and less well-off than MontCo. I am concerned, though, by the fact that it seems like MoCo eligibility for FARMS bottoms out at 5% rather than 0, and I'm curious if this is a minimum cutoff for the county. It's creating a line similar to, but not as dramatic as, the one from the MontCo data. 
 
-### Task: Linear Regression Model (7 points)
+### Task 3: Linear Regression Model (5 points)
 
-Next, you'll perform a linear regression analysis using the lm() function. We'll set the percentage of students who met or exceeded math expectations as the dependent variable, and the FARMS percentage as the independent variable. In other words, if we know the FARMS percentage for a school, how reliably can we predict its math score?
+Replace the REPLACE_ME value with the correct variable name to run a linear regression model predicting math scores from FARMS percentage.
 
 ```{r}
 model <- lm(`% Met or Exceeded Math Expectations` ~ `FARMS Pct`, data = schools)
-
 summary(model)
 ```
 
-Provide the model's output for the three statistics mentioned in the class activity.
+Report the three key statistics: the p-value, the Adjusted R-squared, and the coefficient for FARMS Pct. Then interpret them together — not separately. What does the combination of these three numbers tell you about the relationship between poverty and math scores in Montgomery County, Md.? Is this model worth using? How does it compare to the Pennsylvania model?
 
-ANSWER HERE
+The p-value here is almost incalculably small, meaning this data has really strong statistical significance. The adjusted R-squared value is about 67 percent, meaning over 2/3 of the data is impacted by the percentage of students on FARMS. The coefficient here is close to -60 percent, meaning there is a very strong negative correlation between FARMS eligibility and test scores, something we can already see on the scatter plot. This all adds up to prove the hypothesis that the school board member in Pennsylvania was attempting to make, albeit with a successful result this time; less students on FARMS means higher test scores in MoCo. I wouldn't say the model itself is actually better considering it's the exact same one, but that the data is telling a different story here based on this model - there's likely different factors that are larger indicators of test scores in Pennsylvania but don't mean so much in Maryland, and vice versa. 
 
-Based on what you've learned so far, what does it tell us about the nature of the relationship between FARMS percentage and math scores? Is this model worth exploring further? Why or why not?
+### Task 4: Identifying Schools with the Biggest Residuals (6 points)
 
-ANSWER HERE
-
-### Task: Identifying Schools with Biggest Residuals (3 points)
-
-Let's calculate and examine the residuals next. 
+Replace the REPLACE_ME values with the correct variable names to calculate predicted values, residuals, and absolute residuals for each school. Then arrange the schools in descending order of absolute residuals.
 
 ```{r}
-schools$predicted <- predict(model)
-
-# Calculate the residuals
-schools <- schools |> 
-  mutate(residual = `% Met or Exceeded Math Expectations` - predicted)
-
-# Sort the data frame by the absolute value of the residuals in descending order
 schools <- schools |>
-  mutate(abs_residual = abs(residual)) |>
+  mutate(
+    predicted = predict(model),
+    residual = `% Met or Exceeded Math Expectations` - predicted,
+    abs_residual = abs(residual)
+  ) |>
   arrange(desc(abs_residual))
 
+head(schools |> select(1, `FARMS Pct`, `% Met or Exceeded Math Expectations`, predicted, residual), 10)
 ```
 
-Look at the absolute values of the residuals; what are the largest differences between the predicted result and the actual math scores? Pick two schools with the largest residuals. Find the zip codes where they are located and using the CensusReporter.org website, describe the most interesting demographic data from each zip code.
+Identify the school with the largest positive residual (doing much better than the model predicts) and the school with the largest negative residual (doing much worse). For each school, find its zip code and look it up on [CensusReporter.org](https://censusreporter.org).
 
-ANSWER HERE
+For each of the two schools, answer:
+- What does the demographic and economic profile of the zip code look like?
+- Does anything in that profile help explain why the school is over- or under-performing the model?
+- What would your first reporting question be to the principal of that school?
 
-## Task: Evaluate the model (5 points)
+For Fox Chapel Elementary in Germantown, the median household income is over 100k and the poverty rate is 9.8 percent, which is lower than the rate in the U.S. overall. The strongest indicator of educational success for me in this zip code is that almost 9 in 10 adults in the area have a high school degree, and more than half hold a college degree. I would want to ask the principal why so many students in an area with such a high household income are eligible for FARMS, as it seems like this is why the model wasn't expecting the school to do as well as it did. If we were looking based on household income instead, I think these results would probably fall more in line. 
 
-Describe what conclusions you'd draw from this model's results and how it would influence a story pitch about the school board member and math scores.
+Germantown Elementary is not too drastically different - the median household income is lower at 86k (still not a small number), but the poverty rate is also lower by about a percentage point. However, only about 7 in 10 adults have high school degrees, with just 2 in 10 having college degrees. This is what I would predict accounts for the large disparity, although there are certainly other attributable factors that are not being recorded in this data. I would want to ask the principal if there are any large issues the school is dealing with that the data doesn't account for - a recent redistricting or curriculum overhaul, for example. The census numbers alone might account for the difference in the two schools, but not necessarily for how drastic of a difference Germantown is seeing.
 
-ANSWER HERE
+### Task 5: Evaluate the Model and Write the Pitch (7 points)
+
+You've now run this analysis on two counties. Return to the school board member's claim: that elementary schools with fewer students on free and reduced-price meals do better on standardized math tests.
+
+Write a short story pitch of 4-6 sentences that addresses all of the following: Does the Maryland data support or contradict the claim? How does it compare to what you found in Pennsylvania? What would you ask the school board member if you called them for comment? And what's the most interesting specific finding from your residuals analysis: which school would you want to visit first, and why?
+
+The Maryland data supports the board member's claim that schools with higher FARMS eligibility tend to have lower test scores. This is a stark contrast to the data in Pennsylvania, which found no such correlation and even trended slightly in the opposite direction. If calling the school board member for comment, I would want to ask what data or resource brought them to make this claim - maybe they got their counties mixed up. The information on Fox Chapel elementary is interesting to me, not in that they have surprisingly high test scores but in that so many of their students are eligible for FARMS considering the census data shows it to be an incredibly affluent community. My first order of business would be to visit the school and find out what exactly is going on with FARMS and if there's something about the student population the census data or the data in the model isn't reflective of. 
