@@ -1,0 +1,80 @@
+---
+title: "final_project"
+output: html_document
+---
+```{r}
+library(tidyverse)
+```
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+```{r}
+visitor_volume <- read_csv("visitor_volume.csv")
+room_rates <- read_csv("average-room-rate.csv")
+casino_revenue <- read_csv("casino-revenue.csv")
+
+```
+
+```{r}
+room_rates <- room_rates |>
+  mutate(month_year = floor_date(Month, "Month"))
+
+visitor_volume <- visitor_volume %>% 
+  mutate(month_year = floor_date(Month,"Month"))
+
+combined <- room_rates |> inner_join(visitor_volume, join_by(month_year))
+```
+Well first of all, this doesn't seem to be working and I don't understand the error message it's giving me - it is an issue with the name of the column? 
+
+```{r}
+vegas <- visitor_volume |>
+  left_join(room_rates, by = "Month") |>
+  left_join(casino_revenue, by = "Month") |>
+  arrange(month) |>
+  mutate(
+    period = if_else(month >= as.Date("2025-01-01"), "decline", "pre"),
+    room_rate_lag1 = lag(room_rate, 1),
+    room_rate_lag2 = lag(room_rate, 2),
+    room_rate_lag3 = lag(room_rate, 3)
+  )
+```
+
+My hypothesis is indeed that room rates dropped in response to visitor rates dropping, so I do want to run a test like this. Again, though, I don't understand how this code is working so I'm not really sure how to troubleshoot. Below is my trying my hand at a correlation test. I won't lie, I took this from the "correlation" activity in our class folder - it looks like similar code to what I was reading online. I can tell that some of the above code is meant to place all these separate data points into one chart, but I'm not sure how to do that yet. Once I have all the data in one chart, I imagine the code would look something like this: 
+
+```{r}
+cor_result <- cor.test(visitor_rates$room_rates)
+print(cor_result)
+
+# Create scatter plot
+ggplot(visitor_analysis, aes(x = visitor_rates, y = room_rates)) +
+  geom_smooth(method = "lm", se = TRUE, color = "darkgreen") +
+  labs(
+    title = "Visitor rates vs. room pricing in Las Vegas",
+    x = "Number of visitors",
+    y = "Room rates"
+  ) +
+  theme_light()
+```
+
+I also saw that you recommended running a paired t-test. Below is my best approximation based on an online forum's code and finding out what a paired t-test is in the first place. 
+```{r}
+comprehensive_data %>%
+  summarise(test_result = list(tidy(t.test(Before, After, paired = TRUE)))) %>%
+  unnest(test_result)
+```
+
+This data comes from the Las Vegas Convention and Visitors Authority (LVCVA), which has a research arm that tracks various economic indicators for the Las Vegas area each month. As a governmental entity, it is more reliable for data than a specific interest group or polling contractor would likely be; however, they do still have a motive in that they want to promote Vegas as a tourist destination. Regardless, I don't think there's any way they could or would manipulate this data to reflect that. Additionally, because it's real numbers and not polling responses, there are less ways in which the methodology might affect the results of the data; the onus of not getting incorrect results is on me in this case. 
+
+All of the data loaded provides monthly data going back to 1980, which is much more than I need (in a good way). I'm really only planning to look at the most recent dip in visitor volume, which can be seen in the data starting at January 2025 and continuously declining up until February 2026. 
+
+It's not fair to say whether the decline is truly over yet, considering visitor growth has only been in the positive for one month so far. 
+
+If you compare this data to the casino revenues and daily hotel rates for the same time period, it seems like casino revenues dip pretty much exactly in accordance with the severity of the decrease in visitor volume by month. Daily room rates also seem to dip, which is the opposite of the hypothesis I gave; however, it seems possible that room rates decreased in accordance with declining visitor rates to bring visitors back in. If this is true, I'll need to be able to present a specific delay in room rate trends relative to visitor volumes. 
+
+
+###Given the kinds of tests that we've done in this class, give me an idea of what kinds of analyses you think are appropriate/useful for your project. This list could change, but err on the side of including something, even if you don't get to it later.###
+
+Maybe it's truly recency bias, but I do think that a simple scatterplot looking into the correlation between hotel rates and tourism rates would serve the hypothesis I am trying to come to best. I also think maybe a distribution chart would be a good thing to include if I can find some data on hotel rates in other similar American tourist destinations and compare their distribution to Vegas's. 
+
+I also like the idea of presenting the data with the mean and confidence intervals included. This could be used to show all three data sets I have pulled and how far each end of the timeline reaches from the mean, as well as provide more transparency about the data and its potential accuracy. 
