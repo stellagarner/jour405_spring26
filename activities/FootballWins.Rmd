@@ -1,4 +1,7 @@
-
+---
+title: "FootballWins"
+output: html_document
+---
 ---
 title: "Multiple Regression Analysis in R"
 ---
@@ -7,9 +10,9 @@ title: "Multiple Regression Analysis in R"
 
 Multiple regression analysis is a statistical method used to understand the relationship between one dependent variable and two or more independent variables. This analysis is particularly useful in journalism for exploring complex relationships, such as how different factors collectively impact outcomes like election results, economic indicators, or sports performances. By understanding these relationships, journalists can provide deeper insights and more accurate predictions.
 
-```{r setup}
+```{r setup}                             
 library(tidyverse)
-#install.packages('corrplot')
+install.packages('corrplot')
 library(corrplot)
 ```
 
@@ -54,7 +57,7 @@ The coefficients tell us the estimated effect of each independent variable on th
 
 Is this a useful model, based on what you've seen? Why?
 
-ANSWER HERE
+I would consider this a useful model with the points in mind that it is a statistically significant model on the whole, and that over half of the variability in either scenario can be accounted for using the model itself. Additionally, two of the three coefficients are either significant or close to it. 
 
 ## Correlation Analysis
 
@@ -80,8 +83,10 @@ The results from our correlation analysis show the strength of the relationships
 
 Which of these three factors - Yards Gained, Takeaways and Points Scored - have the most impact on wins? Are there any that do not seem impactful at all?
 
-ANSWER HERE
+Wins appear to be the most impacted by the amount of points scored - I don't know sports very well, but this makes sense to me considering you need more points to win. It seems like wins are the least impacted by yards gained, which implies that successful drives do not necessarily lead to higher occurrences of scoring in football. This is a little more surprising than the last statistic - I think most people would assume yardage and winning have a stronger positive correlation. 
 
 ## Using the Model (3 points)
 
 Without using the words "multiple regression model", describe how you could use this model to cover a team or game.
+
+This model would be useful for covering a sports team or event because it can account for how many different circumstances are affecting outcomes in real time. For example, if we used this model to cover the Chicago Bears in a season where they have the highest yardage of any team, we could show the lack of correlation between yards gained and overall wins to demonstrate why this factor isn't helpful to the team. Similarly, the model could explain why the Buffalo Bills are doing so well against the Bears in a given game - they have the highest number of points scored in the league (in this scenario). 
