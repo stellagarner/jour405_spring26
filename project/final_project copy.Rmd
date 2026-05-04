@@ -9,60 +9,17 @@ Maybe it's truly recency bias, but I do think that a simple scatterplot looking 
 I also like the idea of presenting the data with the mean and confidence intervals included. This could be used to show all three data sets I have pulled and how far each end of the timeline reaches from the mean, as well as provide more transparency about the data and its potential accuracy. 
 ```{r}
 library(tidyverse)
-library(lubridate)
-library(janitor)
-
-visitor_volume <- read_csv("project/visitor_volume.csv") |> clean_names()
-room_rates <- read_csv("project/average-room-rate.csv") |> clean_names()
-casino_revenue <- read_csv("project/casino-revenue.csv") |> clean_names()
-
-visitor_volume <- visitor_volume |> 
-  mutate(month = mdy(month), yo_y_percent = parse_number(yo_y_percent)) |> 
-  rename(visitors = monthly_value, visitor_yoy = yo_y_value, visitor_yoy_pct = yo_y_percent)
-
-room_rates <- room_rates |> 
-  mutate(month = date(mdy_hms(month)), yo_y_percent = parse_number(yo_y_percent)) |> 
-  rename(roomrate = monthly_value, roomrate_yoy = yo_y_value, roomrate_yoy_pct = yo_y_percent)
-  
-casino_revenue <- casino_revenue |> 
-  mutate(month = date(mdy_hms(month)), yo_y_percent = parse_number(yo_y_percent), yo_y_value = parse_number(yo_y_value), monthly_value = parse_number(monthly_value)) |> 
-  rename(revenue = monthly_value, revenue_yoy = yo_y_value, revenue_yoy_pct = yo_y_percent)
-
-visitor_plus_room <- visitor_volume |> 
-  inner_join(room_rates, join_by(month))
-
-combined <- visitor_plus_room |> 
-  inner_join(casino_revenue, join_by(month))
 ```
-```{r}
-visitor_plus_room%>%
-  summarise(test_result = list(tidy(t.test(Before, After, paired = TRUE)))) %>%
-  unnest(test_result)
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
 ```{r}
-cor_result <- cor.test(visitor_plus_room$visitors, visitor_plus_room$roomrate)
-print(cor_result)
+visitor_volume <- read_csv("project/visitor_volume.csv")
+room_rates <- read_csv("project/average-room-rate.csv")
+casino_revenue <- read_csv("project/casino-revenue.csv")
 
-# Create scatter plot
-ggplot(visitor_plus_room, aes(x = visitors, y = roomrate)) +
-  geom_smooth(method = "lm", se = TRUE, color = "darkgreen") +
-  labs(
-    title = "Visitor rates vs. room pricing in Las Vegas",
-    x = "Number of visitors",
-    y = "Room rates"
-  ) +
-  theme_light()
 ```
-```{r}
-visitor_plus_room |>
-  ggplot(aes(x = `visitors`, y = `roomrate`)) +
-  geom_point() +
-  geom_smooth(method = "lm", se = FALSE, color = "red") +
-  labs(x = "Visitors", y = "Room Rates",
-       title = "Visitor rates vs. room pricing in Las Vegas")
-```
-
 This data comes from the Las Vegas Convention and Visitors Authority (LVCVA), which has a research arm that tracks various economic indicators for the Las Vegas area each month. As a governmental entity, it is more reliable for data than a specific interest group or polling contractor would likely be; however, they do still have a motive in that they want to promote Vegas as a tourist destination. Regardless, I don't think there's any way they could or would manipulate this data to reflect that. Additionally, because it's real numbers and not polling responses, there are less ways in which the methodology might affect the results of the data; the onus of not getting incorrect results is on me in this case. 
 
 All of the data loaded provides monthly data going back to 1980, which is much more than I need (in a good way). I'm really only planning to look at the most recent dip in visitor volume, which can be seen in the data starting at January 2025 and continuously declining up until February 2026. 
