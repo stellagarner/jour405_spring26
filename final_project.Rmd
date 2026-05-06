@@ -2,15 +2,14 @@
 title: "final_project"
 output: html_document
 ---
-###Given the kinds of tests that we've done in this class, give me an idea of what kinds of analyses you think are appropriate/useful for your project. This list could change, but err on the side of including something, even if you don't get to it later.###
+###Setup
+I just made a massive code block to load everything at once. Below I'm loading all the packages I want to use, as well as combining my spreadsheets so I can easily and cleanly compare all my data points. Since all the data exists on the same range, I just need to rename the columns so they don't become confusing when placed all together. 
 
-Maybe it's truly recency bias, but I do think that a simple scatterplot looking into the correlation between hotel rates and tourism rates would serve the hypothesis I am trying to come to best. I also think maybe a distribution chart would be a good thing to include if I can find some data on hotel rates in other similar American tourist destinations and compare their distribution to Vegas's. 
-
-I also like the idea of presenting the data with the mean and confidence intervals included. This could be used to show all three data sets I have pulled and how far each end of the timeline reaches from the mean, as well as provide more transparency about the data and its potential accuracy. 
 ```{r}
 library(tidyverse)
 library(lubridate)
 library(janitor)
+library(corrplot)
 
 visitor_volume <- read_csv("project/visitor_volume.csv") |> clean_names()
 room_rates <- read_csv("project/average-room-rate.csv") |> clean_names()
@@ -34,25 +33,43 @@ visitor_plus_room <- visitor_volume |>
 combined <- visitor_plus_room |> 
   inner_join(casino_revenue, join_by(month))
 ```
+###Analysis
+I want to start by using a visualized correlation matrix to find out how gambling revenues and room rates interact with visitor rates. This will help me to find out which variables might have a correlation so I can dig into those further. 
 ```{r}
-visitor_plus_room%>%
-  summarise(test_result = list(tidy(t.test(Before, After, paired = TRUE)))) %>%
-  unnest(test_result)
+# Summary statistics
+summary(combined)
+
+# Create correlation matrix
+selected_vars <- combined |> 
+  select(visitors, roomrate, revenue)
+correlation_matrix <- cor(selected_vars)
+print(correlation_matrix)
+
+# Visualize correlation matrix
+corrplot(correlation_matrix, method = "circle")
 ```
+Based on this matrix, there is a positive correlation between both variables in relation to visitor rates, although that seems more like a given for casino revenues than it does for room rates. I want to examine the latter further to see whether this correlation between rising room rates and rising visitor rates is significant and meaningful. Below, I'm calculating the pearson number for the correlation between the two and also measuring the linear regression model to see if the correlation is statistically significant. 
 
 ```{r}
-cor_result <- cor.test(visitor_plus_room$visitors, visitor_plus_room$roomrate)
-print(cor_result)
+#calculate the correlation
+combined %>% summarize(cor(visitors, roomrate, method = "pearson"))
+#calculate linear regression model
+initial_model <- lm(visitors ~ roomrate, data = combined)
+summary(initial_model)
+```
+The result of the pearson number shows that there is a positive relationship between 
 
-# Create scatter plot
-ggplot(visitor_plus_room, aes(x = visitors, y = roomrate)) +
-  geom_smooth(method = "lm", se = TRUE, color = "darkgreen") +
-  labs(
-    title = "Visitor rates vs. room pricing in Las Vegas",
-    x = "Number of visitors",
-    y = "Room rates"
-  ) +
-  theme_light()
+something something paired t-test 
+```{r}
+
+pre_covid <- visitor_plus_room %>% filter(month < "2020-03-01")
+
+pre_avg <- pre_covid %>% summarize(mean = mean(roomrate)) %>% pull(mean)
+
+post_covid <- visitor_plus_room %>% filter(month>"2020-03-01")
+post_avg <- post_covid %>% summarize(mean=mean(roomrate)) %>% pull(mean)
+
+t.test(pre_avg, post_avg)
 ```
 ```{r}
 visitor_plus_room |>
@@ -62,13 +79,54 @@ visitor_plus_room |>
   labs(x = "Visitors", y = "Room Rates",
        title = "Visitor rates vs. room pricing in Las Vegas")
 ```
+This is really hard to read because of those outlier years of extremely low visitors. After taking a look at the data, it seems those data points are all months following the COVID-19 shutdown. The governor at the time, Steve Sisolak, was really strict on lockdown policy for a long time, so it continued to affect visitor rates well into 2021, which is what we're seeing here. But let's make a new scatter plot that better represents the rest of the data range. 
+```{r}
+library(dplyr)
+library(ggplot2)
 
-This data comes from the Las Vegas Convention and Visitors Authority (LVCVA), which has a research arm that tracks various economic indicators for the Las Vegas area each month. As a governmental entity, it is more reliable for data than a specific interest group or polling contractor would likely be; however, they do still have a motive in that they want to promote Vegas as a tourist destination. Regardless, I don't think there's any way they could or would manipulate this data to reflect that. Additionally, because it's real numbers and not polling responses, there are less ways in which the methodology might affect the results of the data; the onus of not getting incorrect results is on me in this case. 
+# Narrow the scatter plot 
+filtered_data <- visitor_plus_room %>%
+  filter(visitors >2e+06)
 
-All of the data loaded provides monthly data going back to 1980, which is much more than I need (in a good way). I'm really only planning to look at the most recent dip in visitor volume, which can be seen in the data starting at January 2025 and continuously declining up until February 2026. 
+# Create the scatter plot with filtered data
+  filtered_data %>% ggplot(aes(x = `visitors`, y = `roomrate`)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(x = "Visitors", y = "Room Rates",
+       title = "Visitor rates vs. room pricing in Las Vegas")
+```
+That's better! Although at face value, this is not nearly as clustered around the line of regression as one might hope. Just looking at this, you can certainly see the slight but significant positive relationship between visitor rates and room rates, meaning higher visitor numbers cause hotels to up their rates. 
+```{r}
+filtered_dates <- combined %>% filter(month > "2014-12-01")
 
-It's not fair to say whether the decline is truly over yet, considering visitor growth has only been in the positive for one month so far. 
+#Make a timeplot of visitor rates over time
+ggplot(filtered_dates, aes(x = month, y = visitors)) +
+  geom_line(alpha = 0.5) +
+  geom_smooth(method = "loess", span = 0.1) +
+  theme_minimal() +
+  labs(title = "Monthly Visitors to Vegas Since 1980",
+       x = "Date",
+       y = "Visitors",
+       caption = "Source: LVCVA")
 
-If you compare this data to the casino revenues and daily hotel rates for the same time period, it seems like casino revenues dip pretty much exactly in accordance with the severity of the decrease in visitor volume by month. Daily room rates also seem to dip, which is the opposite of the hypothesis I gave; however, it seems possible that room rates decreased in accordance with declining visitor rates to bring visitors back in. If this is true, I'll need to be able to present a specific delay in room rate trends relative to visitor volumes. 
+#Make a timeplot of room rates over time 
+ggplot(filtered_dates, aes(x = month, y = roomrate)) +
+  geom_line(alpha = 0.5) +
+  geom_smooth(method = "loess", span = 0.1) +
+  theme_minimal() +
+  labs(title = "Vegas Hotel Room Rates Since 1980",
+       x = "Date",
+       y = "Average Room Rate",
+       caption = "Source: LVCVA")
 
+#Make a timeplot of gambling revenues over time 
+ggplot(filtered_dates, aes(x = month, y = revenue)) +
+  geom_line(alpha = 0.5) +
+  geom_smooth(method = "loess", span = 0.1) +
+  theme_minimal() +
+  labs(title = "Average Monthly Gambling Revenues Since 1980",
+       x = "Month",
+       y = "Average Gambling Revenue",
+       caption = "Source: LVCVA")
+```
 

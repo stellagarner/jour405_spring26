@@ -1,0 +1,311 @@
+---
+title: "final_example"
+output: html_document
+---
+
+### Set up
+
+Load necessary packages:
+```{r}
+library("tidyverse")
+knitr::opts_chunk$set(echo = TRUE)
+options(scipen = 999)
+```
+
+Load data:
+```{r}
+#load unemployment rate data for October of 2024 from the BLS website
+#I complied the data from the BLS website into a google sheet, then uploaded it as a CSV to my repository
+county_urate <- read_csv("https://raw.githubusercontent.com/awtaylor17/JOUR405_Spring25/refs/heads/main/project/JOUR405_URateDate_Compiled2.csv")
+#load election data provided to me by Derek Willis
+election_data <- read_csv("https://raw.githubusercontent.com/dwillis/jour405/refs/heads/main/data/md_pres_county.csv")
+#load demographic data from the Census Bureau’s 2023 ACS
+Sys.getenv("CENSUS_API_KEY")
+#retrieving the amount of people who identified as white alone in each county
+md_white_2023 <- get_acs(geography = "county",
+              variables = c("B02001_002"),
+              state = "MD",
+              year = 2023)
+#retrieving the amount of estimated income in each county
+md_income_2023 <- get_acs(geography = "county",
+              variables = c("B07411_001"),
+              state = "MD",
+              year = 2023)
+#retrieving the total population (for race) in each county
+md_racetotal_2023 <- get_acs(geography = "county",
+              variables = c("B02001_001"),
+              state = "MD",
+              year = 2023)
+#retrieving the median age in each county
+md_medianage_2023 <- get_acs(geography = "county",
+              variables = c("B01002_001"),
+              state = "MD",
+              year = 2023)
+#retrieving the number of males in each county
+md_male_2023 <- get_acs(geography = "county",
+              variables = c("B01001_002"),
+              state = "MD",
+              year = 2023)
+#retrieving the total population (for gender) in each county
+md_totalgender_2023 <- get_acs(geography = "county",
+              variables = c("B01001_001"),
+              state = "MD",
+              year = 2023)
+```
+While I could probably assume that md_racetotal_2023 and md_totalgender_2023 have the same values, I am using the separate data frames just to be safe.
+
+
+Clean data and make it easier to interpret:
+```{r}
+#create trump_pct
+election_data <- election_data %>% 
+  mutate(
+    trump_pct = trump/total * 100
+  )
+#change estimate name to income
+md_income_2023 <- md_income_2023 %>% 
+  rename(
+    income = estimate
+  )
+#create male_pct
+md_male_2023 <- full_join(md_male_2023, md_totalgender_2023, by = "GEOID")
+md_male_2023 <- md_male_2023 %>%
+  mutate(
+    male_pct = estimate.x/estimate.y * 100
+  )
+#change estimate name to median age
+md_medianage_2023 <- md_medianage_2023 %>% 
+  rename(
+    median_age = estimate
+  )
+#create white_pct
+md_white_2023 <- full_join(md_white_2023, md_racetotal_2023, by = "GEOID")
+md_white_2023 <- md_white_2023 %>%
+  mutate(
+    white_pct = estimate.x/estimate.y * 100
+  )
+```
+In this codeblock, I am changing the names of the variables to reflect what they represent. In the demographic data used by the census, each variable is, by default, called "estimate." Renaming them corrects that. I am also turning the number of trump voters in each county, the number of males in each county and the number of white people in each county into a percent. This is because, otherwise, it would be hard to compare the counties, since each county has a different population. 
+
+
+
+Merge data into one data frame to make analysis easier:
+```{r}
+#select certain values to make the merged datafram less busy
+md_income_2023 <- md_income_2023 %>% 
+  select(
+    GEOID, NAME, income
+  )
+md_male_2023 <- md_male_2023 %>%
+  select(
+    GEOID, male_pct
+  )
+md_medianage_2023 <- md_medianage_2023 %>% 
+  select(
+    GEOID, median_age
+  )
+md_white_2023 <- md_white_2023 %>% 
+  select(
+    GEOID, white_pct
+  )
+#merge dataframes that have GEOID
+all_data <- full_join(md_income_2023, md_male_2023, by = "GEOID")
+all_data <- full_join(all_data, md_medianage_2023, by = "GEOID")
+all_data <- full_join(all_data, md_white_2023, by = "GEOID")
+#rename county values to match for merger
+all_data <- all_data %>%
+  mutate(NAME = str_replace(NAME, " County, Maryland", "")) |> 
+  mutate(NAME = str_replace(NAME, " city, Maryland", " City"))
+all_data <- all_data %>%
+  mutate(NAME = case_when(
+    NAME == "Baltimore" ~ "Baltimore County",
+    TRUE ~ NAME
+  ))
+all_data <- all_data %>%
+  mutate(NAME = case_when(
+    NAME == "St. Mary's" ~ "Saint Mary's",
+    TRUE ~ NAME
+  ))
+#rename column names to match for merger
+all_data <- all_data %>% 
+  rename(
+    County = NAME
+  )
+election_data <- election_data %>% 
+  rename(
+    County = jurisdiction
+  )
+#merge the unemployment rate and election data with all_data
+all_data <- full_join(all_data, county_urate, by = "County")
+all_data <- full_join(all_data, election_data, by = "County")
+```
+
+Note: Based on your suggestion to use mutate() and case_when() to rename values, I Googled the proper format and was shown the structure used above. That is also how I learned about the select() function.
+
+In this codeblock, I merged all of the data into one dataframe because it makes it easier to analyze. When I was first running these calculations, I made a new dataframe for each test, which was not the most efficient way to do it. Additionally, I need to have each variable in the same dataframe to create a multiple regression model, so it is something I need to do anyway. 
+
+### Analysis
+
+## Descriptive Stats
+
+In this codeblock, I am creating the summary statistics for the main dependent variable in my analysis -- trump_pct. I am doing to see how much Maryland, as a state, supported Trump in the 2024 election. 
+
+```{r}
+summary(election_data)
+```
+
+
+By looking at the summary statistics for trump_pct, we can see that Maryland was fairly split on its support for Trump. Some counties, like Garrett County (which has the maximum trump_pct value) overwhelmingly supported Trump, while others, like Prince George's County (which has the lowest trump_pct value) hardly supported him. This is supported by the mean and median -- the measures of central tendency -- which hover at around 50.
+
+What this tells me is that, even though Maryland is a blue state, the people in Maryland did not overwhelming support the Democratic candidate in the 2024 election. 
+
+## Analysis of Variables
+
+# Unemployment rate
+
+In this codeblock, I analyze the correlation between each county's unemployment rate and what percent they voted for Trump in the 2024 election. To do this, I am calculating the correlation coefficient and creating a scatterplot with a line of best fit. I am doing this to see if there is a relationship between these two variables. In other words, I am trying to see if the county's unemployment rate affected how it voted in the 2024 election. To analyze this relationship even more I also creating a linear regression model, which will tell me how well the unemployment rate predicts trump_pct. 
+
+```{r}
+#calculate the correlation
+all_data %>% summarize(cor(U_Rate, trump_pct, method = "pearson"))
+#visualize the correlation
+all_data %>% 
+  ggplot() +
+  geom_point(aes(x=trump_pct, y=U_Rate)) +
+  geom_smooth(aes(x=trump_pct, y=U_Rate), method = "lm") +
+  geom_text(aes(x=trump_pct, y=U_Rate, label=County), size = 3)
+#calculate linear regression model
+summary(lm(`trump_pct` ~ `U_Rate`, data = all_data))
+```
+
+After running these tests, I would say that there is not a strong relationship -- or much of a relationship at all -- between the unemployment rate and trump_pct. This is because both the correlation coefficient and the adjusted R-squared are low. This means that there is not much of a correlation between the variables and that the unemployment rate is not a good predictor of trump_pct. Also, the p-value of the linear regression model is 0.2371, which means that it is insignificant. These results are illustrated by the scatterplot, which shows that the data is fairly spread out and that there is no real pattern.
+
+
+# Percent white
+
+Here, I am analyzing the correlation between how white the county is (white_pct) and what percent of it voted for Trump in the 2024 election. To do this, I am calculating the correlation coefficient and creating a scatterplot with a line of best fit. I am doing this to see how much of a relationship there is between white_pct and trump_pct and if white_pct had any effect on how each county voted. I am also creating a linear regression model, which will tell me how well white_pct can predict trump_pct.
+
+```{r}
+#calculate the correlation
+all_data %>% summarize(cor(white_pct, trump_pct, method = "pearson"))
+#visualize the correlation
+all_data %>% 
+  ggplot() +
+  geom_point(aes(x=trump_pct, y=white_pct)) +
+  geom_smooth(aes(x=trump_pct, y=white_pct), method = "lm") +
+  geom_text(aes(x=trump_pct, y=white_pct, label=County), size = 3)
+#calculate linear regression model
+summary(lm(`trump_pct` ~ `white_pct`, data = all_data))
+```
+
+My analysis shows that there is a strong relationship between white_pct and trump_pct. This is because the correlation coefficient is very high (greater than 90), which means there is a strong linear relationship between these two variables. This can be seen in the scatterplot, which shows that the data follows the line of best fit very closely. The linear regression model also tells us that the relationship is strong because the p-value is very low and the adjusted R-squared value is very high. This means that white_pct does a good job of predicting trump_pct.
+
+Because there is a strong relationship between trump_pct and white_pct, we can say that, based on our data, the whiter the county is, the more likely it is to vote for Trump (at least in the 2024 election). 
+
+
+# Median age
+
+Like the last two codeblocks, I am calculating the correlation coefficient, creating a linear regression model and visualizing the relationship in a scatterplot. I am doing this to see the relationship between a county's median age and how they voted in the 2024 election. 
+
+```{r}
+#calculate correlation
+all_data %>% summarize(cor(median_age, trump_pct, method = "pearson"))
+#visualize correlation
+all_data %>% 
+  ggplot() +
+  geom_point(aes(x=trump_pct, y=median_age)) +
+  geom_smooth(aes(x=trump_pct, y=median_age), method = "lm") +
+  geom_text(aes(x=trump_pct, y=median_age, label=County), size = 3)
+#calculate linear regression model
+summary(lm(`trump_pct` ~ `median_age`, data = all_data))
+```
+
+Based on these results, there is a weak relationship between median age and trump_pct. There is some relationship present because the correlation coefficient is about 41, which is just under halfway correlated, and the p-value for the linear regression model is below 0.05, so the model is significant. Where the relationship falters is in the adjusted R-squared of the linear regression model, which is quite low at 0.1325. That means that this model only covers about 13% of the data. Overall, this relationship can be seen in the scatterplot, in which the data slightly follows the line of best fit, but there are many outliers present.
+
+These results tell us that the age was not a large factor when Marylanders decided how they would vote in the 2024 election. 
+
+
+# Percent male
+
+In this codeblock, I am analyzing the relationship between the county's gender and how it voted in the 2024 election. For gender, I am specifically looking at what percentage of the county is male. To analyze this relationship, I am calculating the correlation coefficient, creating a linear regression model and creating a scatterplot with a line of best fit. I'm hoping to determine how having a higher or lower male population affected how each voted in the 2024 election. 
+
+```{r}
+#calculate correlation
+all_data %>% summarize(cor(male_pct, trump_pct, method = "pearson"))
+#visualize correlation
+all_data %>% 
+  ggplot() +
+  geom_point(aes(x=trump_pct, y=male_pct)) +
+  geom_smooth(aes(x=trump_pct, y=male_pct), method = "lm") +
+  geom_text(aes(x=trump_pct, y=male_pct, label=County), size = 3)
+#calculate linear regression model
+summary(lm(`trump_pct` ~ `male_pct`, data = all_data))
+```
+
+Similar to median age, there is a relationship between male_pct and trump_pct, but it is weak. We know there is a relationship between the variables because the correlation coefficient is about 0.48, which means the two variables are roughly 50% correlated. The p-value of the linear regression model is also below 0.05, so the model is significant. However, adjusted R-squared value low (0.2004), which means that the model only covers about 20% of the data. Additionally, the residuals are high (in the 20's and 30's), which can be seen in the scatterplot, where the data generally follows the line of best fit, but not that closely.
+
+Overall, this means that the gender of a Marylander may have been a factor in deciding how they voted in the 2024 election, but it wasn't the main factor. 
+
+
+# Income
+
+Here, I am determining if there is a relationship between a county's income and how it voted in the 2024 election. I am doing this to see how much of a factor income was in how each county voted. To do this, I am calculating the correlation coefficient, creating a scatterplot and creating a linear regression model.  
+
+```{r}
+#calculate correlation
+all_data %>% summarize(cor(income, trump_pct, method = "pearson"))
+#visualize correlation
+all_data %>% 
+  ggplot() +
+  geom_point(aes(x=trump_pct, y=income)) +
+  geom_smooth(aes(x=trump_pct, y=income), method = "lm") +
+  geom_text(aes(x=trump_pct, y=income, label=County), size = 3)
+#calculate linear regression model
+summary(lm(`trump_pct` ~ `income`, data = all_data))
+```
+
+Based on my analysis, there is a slight relationship between income and trump_pct. Like the last two variables, the correlation coefficient for income is slightly under 50% and the linear regression model has a significant p-value. The adjusted R-squared is also low (0.1286), which means that the model only covers about 15% of the data. The scatterplot supports this analysis because the data somewhat follows the line of best fit, but there are lots of outliers.
+
+In all, this analysis shows that income was not a main factor of how Marylanders voted in the 2024 election. 
+
+
+## Multiple Regression
+
+In this codeblock, I am creating a multiple regression model based on the these variables. In the model, the dependent variable is trump_pct and the independent variables are unemployment rate and the demographic variables. I am going to start by creating a model with all the independent variables, and then remove some too see which of them do the best at predicting trump_pct. By doing this I hope to see which variables are the most important in predicting trump_pct. I am also going to create a bar graph to compare the adjusted R-squared values of each model that I make. 
+
+```{r}
+#create multiple regression models, steadily narrowing down the variables
+mr_model_1 <- lm(trump_pct ~ median_age + white_pct + male_pct + income + U_Rate, data = all_data)
+summary(mr_model_1)
+mr_model_2 <- lm(trump_pct ~ white_pct + male_pct + income + U_Rate, data = all_data)
+summary(mr_model_2)
+mr_model_3 <- lm(trump_pct ~ white_pct + male_pct + income, data = all_data)
+summary(mr_model_3)
+mr_model_4 <- lm(trump_pct ~ white_pct + income, data = all_data)
+summary(mr_model_4)
+#create comparison chart
+model_names <- c("Full model", "Model 2", "Model 3", "Model 4")
+adj_r_squared <- c(summary(mr_model_1)$adj.r.squared,
+                   summary(mr_model_2)$adj.r.squared,
+                   summary(mr_model_3)$adj.r.squared,
+                   summary(mr_model_4)$adj.r.squared)
+model_comparison <- data.frame(Model = model_names, Adjusted_R_squared = adj_r_squared)
+ggplot(model_comparison, aes(x = reorder(Model, Adjusted_R_squared), y = Adjusted_R_squared)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(title = "Model Comparison by Adjusted R-squared",
+       x = "Model")
+```
+
+The first linear regression model shows us that, using all the variables, we can predict about 91% of the data. However, this does not tell us which variables are the most important in predicting trump_pct. So, as we narrow down the variables, we end up finding that white_pct and income give us the highest adjusted R-squared value in the least amount of variables. And, as seen in the bar chart, the difference between the full model (mr_model_1) and the model with only income and white_pct (mr_model_4) is not that much (only 0.0262).
+
+What this tells me is that income and white_pct were the two most important factors in determining what percent of a Maryland county will vote for Trump in the 2024 election. It also means that, at least in the context of the 2024 election, income and white_pct are the two most important factors in predicting Trump's voter turnout. 
+
+
+
+### Story Pitch
+My project has two main findings. The first is that counties with a higher percentage of white people had a higher percentage of Trump voters. The second is that how white a county is and the county's income were the two main variables that explained how people voted in the 2024 election. Using this analysis, I would pitch a story focusing on the 2026 midterm elections. I would want to see what the Democratic party, which lost seats in both the U.S. House and the U.S. Senate, is doing to target Republican or conservative-leaning voters in Maryland and if they are targeting voters in whiter counties and voters of lower income, who voted for Trump in the 2024 election, according to my analysis. It is important to note, though, that some counties that had a lower income, like Baltimore City, did not have a large percentage of Trump voters, but the majority of them did.
+
+
+To report this story, I would talk to Maryland Democratic party leaders, Maryland Republican party leaders, political science professors (or other experts on the subject) and voters. I would want to ask the party leaders what strategies they are using to get voters to vote for their candidates in the 2026 election. I would ask the professors and experts what they expect the parties to do and what they have done in the past. I would also ask them how accurate they think my findings are. Lastly, I'd ask voters from different counties what issues they feel passionate about going into the 2026 election. 
+
