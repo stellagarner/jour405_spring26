@@ -10,6 +10,7 @@ library(tidyverse)
 library(lubridate)
 library(janitor)
 library(corrplot)
+library(stats)
 
 visitor_volume <- read_csv("project/visitor_volume.csv") |> clean_names()
 room_rates <- read_csv("project/average-room-rate.csv") |> clean_names()
