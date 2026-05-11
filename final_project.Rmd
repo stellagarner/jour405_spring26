@@ -3,19 +3,22 @@ title: "final_project"
 output: html_document
 ---
 ###Setup
-I just made a massive code block to load everything at once. Below I'm loading all the packages I want to use, as well as combining my spreadsheets so I can easily and cleanly compare all my data points. Since all the data exists on the same range, I just need to rename the columns so they don't become confusing when placed all together. 
+I made a massive code block to load everything at once. Below I'm loading all the packages I want to use, as well as combining my spreadsheets so I can easily and cleanly compare all my data points. Since all the data exists on the same range, I just need to rename the specific data columns so they don't become confusing when placed all together. 
 
 ```{r}
+#Load it up
 library(tidyverse)
 library(lubridate)
 library(janitor)
 library(corrplot)
 library(stats)
 
+#Create cleaner data tables 
 visitor_volume <- read_csv("project/visitor_volume.csv") |> clean_names()
 room_rates <- read_csv("project/average-room-rate.csv") |> clean_names()
 casino_revenue <- read_csv("project/casino-revenue.csv") |> clean_names()
 
+#Create different combinations of data 
 visitor_volume <- visitor_volume |> 
   mutate(month = mdy(month), yo_y_percent = parse_number(yo_y_percent)) |> 
   rename(visitors = monthly_value, visitor_yoy = yo_y_value, visitor_yoy_pct = yo_y_percent)
@@ -36,6 +39,7 @@ combined <- visitor_plus_room |>
 ```
 ###Analysis
 I want to start by using a visualized correlation matrix to find out how gambling revenues and room rates interact with visitor rates. This will help me to find out which variables might have a correlation so I can dig into those further. 
+
 ```{r}
 # Summary statistics
 summary(combined)
@@ -62,18 +66,25 @@ summary(initial_model)
 ```
 The result of the pearson number shows that there is a moderately positive relationship between visitor rates increasing and room rates increasing. I will want to do some more testing later to determine which factor is influencing the other. The linear regression model indicates that the model is extremely statistically significant, meaning these results could not be due to chance; however, the multiple and adjusted R-squared values indicate that a model based on this correlation would not be particularly strong or sound. 
 
-I also noticed that some of the biggest shifts in visitor rates and pricing took place during the COVID pandemic; I want to split my data into pre- and post-COVID blocks to see if that affects what my regression charts look like. I'll also use a t-test to 
+I also noticed that some of the biggest shifts in visitor rates and pricing took place during the COVID pandemic; I want to split my data into pre- and post-COVID blocks to see if that affects what my regression charts look like. I'll also use a t-test to see if there's a drastic different between the means of those two blocks of data. 
 ```{r}
-
+#Create data blocks for pre- and post-COVID
 pre_covid <- visitor_plus_room %>% filter(month < "2020-03-01")
-
-pre_avg <- pre_covid %>% summarize(mean = mean(roomrate)) %>% pull(mean)
-
 post_covid <- visitor_plus_room %>% filter(month>"2020-03-01")
+
+#Find the averages 
+pre_avg <- pre_covid %>% summarize(mean = mean(roomrate)) %>% pull(mean)
 post_avg <- post_covid %>% summarize(mean=mean(roomrate)) %>% pull(mean)
 
+#Create the t-test
 t.test(pre_covid$roomrate, post_covid$roomrate, alternative = "two.sided")
 ```
+While this t-test does clearly show a drastic difference between the two room rate means, I also want to find out if the mean of visitor rates rose accordingly to meet the rise in room rates. 
+
+```{r}
+t.test(pre_covid$visitors, post_covid$visitors, alternative = "two.sided")
+```
+This is really interesting - where room rates rose post-COVID, visitor rates shrunk. I'll keep this in mind for my story pitch later. Now I want to dig more into the correlation between visitor rates and room rates by visualizing the data - I'll start with just a scatterplot of all the data available. 
 ```{r}
 visitor_plus_room |>
   ggplot(aes(x = `visitors`, y = `roomrate`)) +
@@ -101,7 +112,7 @@ filtered_data <- visitor_plus_room %>%
 ```
 That's better. Although at face value, this is not nearly as clustered around the line of regression as one might hope. Just looking at this, you can certainly see the slight but significant positive relationship between visitor rates and room rates, meaning higher visitor numbers cause hotels to up their rates. 
 
-Considering that we've already split up our data into pre- and post-covid blocks, let's also take a look at what scatterplots specifically based on those time periods look like. I want to find out if the data will be more strongly correlated during a certain time period, and whether COVID may have affected that correlation. 
+Considering that we've already split up our data into pre- and post-covid blocks and found some interesting results based on that, let's also take a look at what scatterplots specifically based on those time periods look like. I want to find out if the data will be more strongly correlated during a certain time period, and whether COVID may have affected that correlation. 
 
 ```{r}
 
@@ -131,7 +142,7 @@ post_covid %>% summarize(cor(visitors, roomrate, method = "pearson"))
 ```
 My suspicions based on the scatter plots are mainly confirmed; the correlations are close to the same in both cases. In fact, the correlation between rising rates and rising visitors is higher post-COVID, although this could be due to the very low visitors/room rates which occurred during the pandemic months. But I also think it's possible that hotels felt justified in raising prices higher post-COVID than pre-COVID because there was a lack of recent precedent for the prices; this is something I'll address in my story pitch. 
 
-All this data lends to finding out whether hypothesis I had going into this is true, which is that high room rates has been one of the potential contributors to the decline in visitors that Vegas experienced in 2025. First, I want to look at how each dataset has changed over time, so I'm putting every dataset on a different timeline. I'm going to start by filtering the data just to show trend lines starting in 2015 so we can look at the last decade specifically and see if anything stands out. 
+All this data lends to finding out whether the hypothesis I had going into this is true, which is that high room rates were one of the potential contributors to the decline in visitors that Vegas experienced in 2025. First, I want to look at how each dataset has changed over time, so I'm putting every dataset on a different timeline. I'm going to start by filtering the data just to show trend lines starting in 2015 so we can look at the last decade specifically and see if anything stands out. 
 ```{r}
 filtered_dates <- combined %>% filter(month > "2014-12-01")
 
@@ -165,7 +176,7 @@ ggplot(filtered_dates, aes(x = month, y = revenue)) +
        y = "Average Gambling Revenue",
        caption = "Source: LVCVA")
 ```
-An interesting pattern to look at here is how all of the data seems to have seasonal trendlines that mainly stayed the same up until COVID, with peaks in the summer months and dips in the winter. It might be interesting just to go into the ways that COVID changed all of these variables in general. The dropoff in monthly visitors around early 2025 is fairly visible, but I want to emphasize it so I can really compare it to gambling revenues and hotel room rates. Like I did with the scatterplots, I'll narrow down the data into the time period I'm interested on so I can really look at those trend lines in detail. Since it's such a small amount of data and the points are exact, the geom_smooth function will not be necessary here. 
+An interesting pattern here is how all of the data seems to have seasonal trendlines that mainly stayed the same up until COVID. It might be interesting just to go into the ways that COVID genearlly affected all of these variables in my story pitch. The dropoff in monthly visitors around early 2025 is fairly visible, but I want to emphasize it so I can really compare it to gambling revenues and hotel room rates. Like I did with the scatterplots, I'll narrow down the data into the time period I'm interested on so I can really look at those trend lines in detail. Since it's such a small amount of data and the points are exact, the geom_smooth function will not be necessary here. 
 ```{r}
 year_dates <- combined %>% filter(month > "2024-12-01")
 
@@ -199,6 +210,7 @@ ggplot(year_dates, aes(x = month, y = revenue)) +
 This is interesting. The visitor rates for this time period, when zoomed in on, are a little all over the place, with a stark dropoff shortly after January that could be attributed to immediate effects of President Trump assuming office and international tourists choosing not to enter the United States. All of the charts do show a drastic crater during the summer months, although this is less pronounced in visitor rates themselves and more pronounced in room rates and gambling revenues. Although summer usually tends to be a little slower based on our seasonal data from the previous time plots, in none of them do rates drop so drastically like they do here. 
 
 ###Story Pitch 
-My main takeaway from these findings is that, while there does appear to be a statistically significant correlation between a rise in visitor rates and a rise in room rates, it is neither newsworthy nor interesting enough to be reported on further. But I do think there are a couple more areas in this data where interesting stories might lie. One lies with how room rates have existed on an entirely new, increased precedent since visitor rates bounced back after COVID, and they don't seem likely to drop back to pre-COVID rates anytime soon. I also think the large crater in specifically the data from the summer months of 2025 would be interesting to explore. If visitor rates went slightly back up in the preceding months, why would they have dropped so much more drastically than what is typical for the summer season? 
+My main takeaway from these findings is that, while there does appear to be a statistically significant correlation between a rise in visitor rates and a rise in room rates, it is neither newsworthy nor interesting enough to be reported on further. But I do think there are a couple more areas in this data where interesting stories might lie. One lies with how room rates have existed on an entirely new, increased precedent since visitor rates bounced back after COVID, and they don't seem likely to drop back to pre-COVID rates anytime soon.
+Based on our t-tests, I find it possible this new price precedent is part of the reason why post-COVID visitor means dipped a little. I also think the large crater in specifically the data from the summer months of 2025 would be interesting to explore. If visitor rates actually increased slightly in the preceding months, why would they have dropped so much more drastically than what is typical for the summer season? 
 
 To explore both of these ideas further, I would start by looking into the history of specific hotel's room rates both pre- and post-COVID and talk to hotels who raised their prices the most significantly to find out why that might have been the case. I also would want to talk the regular revisitors that make up a large part of the Vegas tourism base - have these rising room rates discouraged them from returning or affected the nature of their trips at all, and could that have contributed to the dip seen in the summer of 2025? Lastly, I would want to speak to other business owners who might have been affected by that summer dip. Have they struggled to get by more frequently in recent years during those down periods, or have rising prices contributed to higher revenues? And what was the experience of that specific summer like? 
